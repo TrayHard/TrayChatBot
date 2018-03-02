@@ -113,7 +113,7 @@
             this.Controls.Add(this.mf_btnDisconnect);
             this.Controls.Add(this.mf_btnConnect);
             this.Name = "MainForm";
-            this.Text = "Form1";
+            this.Text = "TrayChatBot";
             this.ResumeLayout(false);
             this.PerformLayout();
 

@@ -48,19 +48,19 @@ namespace TrayChatBot
             }
             client.OnConnected += new EventHandler<OnConnectedArgs>(onConnected);
             client.Connect();
-            mf_ChatBox.AppendText("Connecting...\n");
+            print("Connecting...");
         }
 
         private void mf_btnChat_Click(object sender, EventArgs e)
         {
             if (client.IsConnected)
             {
-                mf_ChatBox.AppendText(mf_txtChatLineBox.Text + "\n");
+                print(mf_txtChatLineBox.Text);
                 client.SendMessage(mf_txtChatLineBox.Text);
             }
             else
             {
-                mf_ChatBox.AppendText("Error! Disconnected from chat!");
+                print("Error! You are not connected!");
             }
         }
 
@@ -72,17 +72,17 @@ namespace TrayChatBot
         public void onConnected(object sender, OnConnectedArgs e)
         {
             client.OnDisconnected += new EventHandler<OnDisconnectedArgs>(onDisconnected);
-
+            client.OnConnected -= onConnected;
             CheckForIllegalCrossThreadCalls = false;
-            mf_ChatBox.AppendText("Connection established!\n");
+            print("Connection established!\n");
             client.JoinChannel(mf_txtChannelName.Text);
         }
 
         public void onDisconnected(object sender, OnDisconnectedArgs e)
         {
             CheckForIllegalCrossThreadCalls = false;
-            mf_ChatBox.AppendText("Disconnected!\n");
-            
+            print("Disconnected!");
+            client.OnDisconnected -= onDisconnected;
         }
               
         public void print(string text)
