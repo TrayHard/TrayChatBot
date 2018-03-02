@@ -26,6 +26,7 @@ namespace TrayChatBot
         public static string  twitchName = Properties.Settings.Default.login;
         public static string  oauthToken = Properties.Settings.Default.oauth;
         public static string currChannel = "";
+        public static string myName = "";
         public TwitchClient client = new TwitchClient(new ConnectionCredentials(twitchName, oauthToken));
 
         public MainForm()
@@ -35,58 +36,129 @@ namespace TrayChatBot
         // КНОПКИ
         ////////////
         /// <summary>
-        /// [кнопка] Connect
+        /// [кнопка] Connect server
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void mf_btnConnect_Click(object sender, EventArgs e)
         {
-            // Проверка, подключен ли пользователь уже
+            // [CHECK] Подключен ли пользователь уже к серверу Twitch?
             if(client.IsConnected)
             {
-                printError("ERROR: Connection is already established!");
+                // [ДА] Вывод ошибки
+                printError("Connection is already established!");
                 return;
             }
-            // Проверка на пустое поле имени канала
-            if(mf_txtChannelName.Text == "")
+            // [CHECK] Заполнено ли поле "ChannelName"?
+            if (mf_txtChannelName.Text == "")
             {
-                printError("ERROR: Type channel name first!");
+                // [НЕТ] Вывод ошибки
+                printError("Type channel name first!");
                 return;
             }
+            // Подключаемся к серверу
             client.OnConnected += new EventHandler<OnConnectedArgs>(onConnected);
+            client.OnConnectionError += new EventHandler<OnConnectionErrorArgs>(onConnectionError);
             client.Connect();
             printInfo("Connecting...");
         }
         /// <summary>
-        /// [кнопка] Chat
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void mf_btnChat_Click(object sender, EventArgs e)
-        {
-            // Проверка если подключен то пишет в чат
-            if (client.IsConnected)
-            {
-                print(client.TwitchUsername + ": " + mf_txtChatLineBox.Text);
-                client.SendMessage(mf_txtChatLineBox.Text);
-                mf_txtChatLineBox.Text = "";
-            }
-            // Если нет, то выдает ошибку
-            else
-            {
-                printError("ERROR: You are not connected!");
-            }
-        }
-        /// <summary>
-        /// [кнопка] Disconnect
+        /// [кнопка] Disconnect server
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void mf_btnDisconnect_Click(object sender, EventArgs e)
         {
+            // [CHECK] Подключен ли пользователь к чату?
+            if (currChannel != "")
+            {
+                // [ДА] Отключаемся от этого чата
+                client.LeaveChannel(currChannel);
+                currChannel = "";
+            }
             client.Disconnect();
         }
-        // ФУНКЦИИ
+        /// <summary>
+        /// [кнопка] Join channel
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void mf_btnJoin_Click(object sender, EventArgs e)
+        {
+            // [CHECK] Подключен ли пользователь к серверу?
+            if (!client.IsConnected)
+            {
+                // [НЕТ] Вывод ошибки
+                printError("You are not connected to Twitch server. Press 'Connect' first!");
+                return;
+            }
+            // [CHECK] Подключен ли пользователь к другим чатам?
+            if(currChannel != "")
+            {
+                // [ДА] Вывод ошибки
+                printError("You already joined channel '"+ currChannel +"'! Leave channel first.");
+                return;
+            }
+            // Подключаемся к каналу
+            client.JoinChannel(mf_txtChannelName.Text);
+            client.OnJoinedChannel += new EventHandler<OnJoinedChannelArgs>(onChannelJoined);
+        }
+        /// <summary>
+        /// [кнопка] Leave channel
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void mf_btnLeave_Click(object sender, EventArgs e)
+        {
+            // Проверка подключен ли к серверу
+            if (!client.IsConnected)
+            {
+                printError("You are not connected to Twitch server. Press 'Connect' first!");
+                return;
+            }
+            // Проверка, подключен ли пользователь к чатам
+            if (client.JoinedChannels.Count == 0)
+            {
+                printError("You are not joined to any channel!");
+                return;
+            }
+            // Покидаем канал
+            client.LeaveChannel(currChannel);
+            client.OnLeftChannel += new EventHandler<OnLeftChannelArgs>(onChannelLeft);
+        }
+        /// <summary>
+        /// [кнопка] Send
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void mf_btnChat_Click(object sender, EventArgs e)
+        {
+            // [CHECK 1] Подключен ли пользователь к серверу?
+            if (client.IsConnected)
+            {
+                // [CHECK 2] Подключен ли пользователь к каналу?
+                if (currChannel != "")
+                {
+                    // [ДА] [ДА] Добавляем сообщение в чатбокс 
+                    print(myName + ": " + mf_txtChatLineBox.Text);
+                    // Отправляем его по установленному соединению
+                    client.SendMessage(mf_txtChatLineBox.Text);
+                    // Очищаем бокс с набираемым сообщением
+                    mf_txtChatLineBox.Text = "";
+                }
+                else
+                {
+                    // [ДА] [НЕТ] Вывод ошибки
+                    printError("You are not joined to any channel!");
+                }
+            }
+            else
+            {
+                // [НЕТ] [...] Вывод ошибки
+                printError("You are not connected to the server!");
+            }
+        }
+        // HANDLER'ы
         /////////////
         /// <summary>
         /// [handler] ПОДКЛЮЧЕНИЕ к серверу
@@ -99,14 +171,24 @@ namespace TrayChatBot
 
             client.OnDisconnected += new EventHandler<OnDisconnectedArgs>(onDisconnected);
             client.OnConnected -= onConnected;
-            
+
+            myName = e.BotUsername;
             // Подключаемся к чату канала
-            client.JoinChannel(mf_txtChannelName.Text);
-            currChannel = mf_txtChannelName.Text;
-            printInfo("Connection established!\n");
+            printInfo("Connection established!");
 
             client.OnMessageReceived += new EventHandler<OnMessageReceivedArgs>(globalMessageRecieved);
         }
+        /// <summary>
+        /// [handler] ОШИБКА подключения к серверу
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        public void onConnectionError(object sender, OnConnectionErrorArgs e)
+        {
+            CheckForIllegalCrossThreadCalls = false;
+            printError("Connection failed! " + e.Error.Exception.Message);
+        }
+        
         /// <summary>
         /// [handler] ОТКЛЮЧЕНИЕ от сервера
         /// </summary>
@@ -123,6 +205,34 @@ namespace TrayChatBot
             printInfo("Disconnected!");
         }
         /// <summary>
+        /// [handler] ЗАЙТИ на канал
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        public void onChannelJoined(object sender, OnJoinedChannelArgs e)
+        {
+            CheckForIllegalCrossThreadCalls = false;
+
+            print("--------------------------------------\n" + currChannel.ToUpper() + "\n--------------------------------------");
+
+            currChannel = mf_txtChannelName.Text;
+            printInfo("Succefully joined to channel '" + currChannel + "'!");
+            client.OnJoinedChannel -= onChannelJoined;
+        }
+        /// <summary>
+        /// [handler] ПОКИНУТЬ канал
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        public void onChannelLeft(object sender, OnLeftChannelArgs e)
+        {
+            CheckForIllegalCrossThreadCalls = false;
+
+            printInfo("Succefully left channel '" + currChannel + "'!");
+            currChannel = "";
+            client.OnLeftChannel -= onChannelLeft;
+        }
+        /// <summary>
         /// [handler] Получение нового сообщения
         /// </summary>
         /// <param name="sender"></param>
@@ -133,8 +243,9 @@ namespace TrayChatBot
             Color nameColor = Color.FromArgb(e.ChatMessage.Color.R, e.ChatMessage.Color.G, e.ChatMessage.Color.B);
             
             mf_ChatBox.AppendText(e.ChatMessage.DisplayName + ":");
-            mf_ChatBox.Select(mf_ChatBox.Text.Length - (e.ChatMessage.DisplayName.Length + 2), e.ChatMessage.DisplayName.Length + 2);
+            mf_ChatBox.Select(mf_ChatBox.Text.Length - (e.ChatMessage.DisplayName.Length + 1), e.ChatMessage.DisplayName.Length + 1);
             mf_ChatBox.SelectionFont = new Font(
+                // Стиль никнейма
                 "Tahoma", 
                 10, 
                 FontStyle.Bold
@@ -143,6 +254,7 @@ namespace TrayChatBot
             print(" " + e.ChatMessage.Message);
             mf_ChatBox.Select(mf_ChatBox.Text.Length - (e.ChatMessage.Message.Length + 1), e.ChatMessage.Message.Length + 2);
             mf_ChatBox.SelectionFont = new Font(
+                // Стиль сообщения
                 "Tahoma",
                 10,
                 FontStyle.Regular
@@ -151,7 +263,8 @@ namespace TrayChatBot
             mf_ChatBox.SelectionStart = mf_ChatBox.TextLength;
             mf_ChatBox.ScrollToCaret();
         }
-
+        // ФУНКЦИИ
+        //////////////////
         /// <summary>
         /// [функция] Написать в чатбокс
         /// </summary>
@@ -167,11 +280,11 @@ namespace TrayChatBot
         /// <param name="text"></param>
         public void printError(string text)
         {
-            mf_ChatBox.Focus();
-            mf_ChatBox.AppendText(text);
-            mf_ChatBox.Select(mf_ChatBox.Text.Length - text.Length, text.Length);
-            mf_ChatBox.SelectionColor = Color.Red;
-            mf_ChatBox.AppendText("\n");
+            mf_LogBox.AppendText("ERROR: "+text);
+            mf_LogBox.Select(mf_LogBox.Text.Length - (text.Length + 7), (text.Length + 7));
+            mf_LogBox.SelectionColor = Color.Red;
+            mf_LogBox.AppendText("\n");
+            mf_LogBox.ScrollToCaret();
         }
         /// <summary>
         /// [функция] Написать в чатбокс (ИНФО)
@@ -179,11 +292,13 @@ namespace TrayChatBot
         /// <param name="text"></param>
         public void printInfo(string text)
         {
-            mf_ChatBox.Focus();
-            mf_ChatBox.AppendText(text);
-            mf_ChatBox.Select(mf_ChatBox.Text.Length - text.Length, text.Length);
-            mf_ChatBox.SelectionColor = Color.BlueViolet;
-            mf_ChatBox.AppendText("\n");
+            mf_LogBox.AppendText(text);
+            mf_LogBox.Select(mf_LogBox.Text.Length - text.Length, text.Length);
+            mf_LogBox.SelectionColor = Color.BlueViolet;
+            mf_LogBox.AppendText("\n");
+            mf_LogBox.ScrollToCaret();
         }
+
+        
     }
 }
