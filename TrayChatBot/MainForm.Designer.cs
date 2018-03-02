@@ -59,9 +59,11 @@
             // 
             // mf_ChatBox
             // 
+            this.mf_ChatBox.BackColor = System.Drawing.Color.White;
             this.mf_ChatBox.Location = new System.Drawing.Point(13, 13);
             this.mf_ChatBox.Name = "mf_ChatBox";
             this.mf_ChatBox.ReadOnly = true;
+            this.mf_ChatBox.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.ForcedVertical;
             this.mf_ChatBox.Size = new System.Drawing.Size(325, 258);
             this.mf_ChatBox.TabIndex = 2;
             this.mf_ChatBox.Text = "";
@@ -79,7 +81,7 @@
             this.mf_btnChat.Name = "mf_btnChat";
             this.mf_btnChat.Size = new System.Drawing.Size(326, 45);
             this.mf_btnChat.TabIndex = 4;
-            this.mf_btnChat.Text = "Chat";
+            this.mf_btnChat.Text = "Send";
             this.mf_btnChat.UseVisualStyleBackColor = true;
             this.mf_btnChat.Click += new System.EventHandler(this.mf_btnChat_Click);
             // 
@@ -89,7 +91,7 @@
             this.mf_txtChannelName.Name = "mf_txtChannelName";
             this.mf_txtChannelName.Size = new System.Drawing.Size(153, 20);
             this.mf_txtChannelName.TabIndex = 5;
-            this.mf_txtChannelName.Text = "trayhardplay";
+            this.mf_txtChannelName.Text = "lirik";
             // 
             // label1
             // 

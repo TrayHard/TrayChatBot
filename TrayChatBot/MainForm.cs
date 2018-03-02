@@ -25,6 +25,7 @@ namespace TrayChatBot
     {
         public static string  twitchName = Properties.Settings.Default.login;
         public static string  oauthToken = Properties.Settings.Default.oauth;
+        public static string currChannel = "";
         public TwitchClient client = new TwitchClient(new ConnectionCredentials(twitchName, oauthToken));
 
         public MainForm()
@@ -43,18 +44,18 @@ namespace TrayChatBot
             // Проверка, подключен ли пользователь уже
             if(client.IsConnected)
             {
-                print("ERROR: Connection is already established!");
+                printError("ERROR: Connection is already established!");
                 return;
             }
             // Проверка на пустое поле имени канала
             if(mf_txtChannelName.Text == "")
             {
-                print("ERROR: Type channel name first!");
+                printError("ERROR: Type channel name first!");
                 return;
             }
             client.OnConnected += new EventHandler<OnConnectedArgs>(onConnected);
             client.Connect();
-            print("Connecting...");
+            printInfo("Connecting...");
         }
         /// <summary>
         /// [кнопка] Chat
@@ -68,11 +69,12 @@ namespace TrayChatBot
             {
                 print(client.TwitchUsername + ": " + mf_txtChatLineBox.Text);
                 client.SendMessage(mf_txtChatLineBox.Text);
+                mf_txtChatLineBox.Text = "";
             }
             // Если нет, то выдает ошибку
             else
             {
-                print("ERROR: You are not connected!");
+                printError("ERROR: You are not connected!");
             }
         }
         /// <summary>
@@ -100,7 +102,8 @@ namespace TrayChatBot
             
             // Подключаемся к чату канала
             client.JoinChannel(mf_txtChannelName.Text);
-            print("Connection established!\n");
+            currChannel = mf_txtChannelName.Text;
+            printInfo("Connection established!\n");
 
             client.OnMessageReceived += new EventHandler<OnMessageReceivedArgs>(globalMessageRecieved);
         }
@@ -113,8 +116,11 @@ namespace TrayChatBot
         {
             CheckForIllegalCrossThreadCalls = false;
 
+            client.LeaveChannel(currChannel);
             client.OnDisconnected -= onDisconnected;
-            print("Disconnected!");
+            client.OnMessageReceived -= globalMessageRecieved;
+
+            printInfo("Disconnected!");
         }
         /// <summary>
         /// [handler] Получение нового сообщения
@@ -124,8 +130,26 @@ namespace TrayChatBot
         public void globalMessageRecieved(object sender, OnMessageReceivedArgs e)
         {
             CheckForIllegalCrossThreadCalls = false;
-
-            print(e.ChatMessage.DisplayName + ": " + e.ChatMessage.Message);
+            Color nameColor = Color.FromArgb(e.ChatMessage.Color.R, e.ChatMessage.Color.G, e.ChatMessage.Color.B);
+            
+            mf_ChatBox.AppendText(e.ChatMessage.DisplayName + ":");
+            mf_ChatBox.Select(mf_ChatBox.Text.Length - (e.ChatMessage.DisplayName.Length + 2), e.ChatMessage.DisplayName.Length + 2);
+            mf_ChatBox.SelectionFont = new Font(
+                "Tahoma", 
+                10, 
+                FontStyle.Bold
+                );
+            mf_ChatBox.SelectionColor = nameColor;
+            print(" " + e.ChatMessage.Message);
+            mf_ChatBox.Select(mf_ChatBox.Text.Length - (e.ChatMessage.Message.Length + 1), e.ChatMessage.Message.Length + 2);
+            mf_ChatBox.SelectionFont = new Font(
+                "Tahoma",
+                10,
+                FontStyle.Regular
+                );
+            mf_ChatBox.SelectionColor = Color.Black;
+            mf_ChatBox.SelectionStart = mf_ChatBox.TextLength;
+            mf_ChatBox.ScrollToCaret();
         }
 
         /// <summary>
@@ -134,7 +158,32 @@ namespace TrayChatBot
         /// <param name="text"></param>
         public void print(string text)
         {
-            mf_ChatBox.AppendText(text + "\n");
+            mf_ChatBox.Focus();
+            mf_ChatBox.AppendText(text+ "\n");
+        }
+        /// <summary>
+        /// [функция] Написать в чатбокс (ОШИБКА)
+        /// </summary>
+        /// <param name="text"></param>
+        public void printError(string text)
+        {
+            mf_ChatBox.Focus();
+            mf_ChatBox.AppendText(text);
+            mf_ChatBox.Select(mf_ChatBox.Text.Length - text.Length, text.Length);
+            mf_ChatBox.SelectionColor = Color.Red;
+            mf_ChatBox.AppendText("\n");
+        }
+        /// <summary>
+        /// [функция] Написать в чатбокс (ИНФО)
+        /// </summary>
+        /// <param name="text"></param>
+        public void printInfo(string text)
+        {
+            mf_ChatBox.Focus();
+            mf_ChatBox.AppendText(text);
+            mf_ChatBox.Select(mf_ChatBox.Text.Length - text.Length, text.Length);
+            mf_ChatBox.SelectionColor = Color.BlueViolet;
+            mf_ChatBox.AppendText("\n");
         }
     }
 }
