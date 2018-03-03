@@ -1,26 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using TwitchLib;
 using TwitchLib.Models.API;
+using TwitchLib.Models.API.v5.Communities;
 using TwitchLib.Models.Client;
 using TwitchLib.Events.Client;
-using TwitchLib.Exceptions.API;
-using TwitchLib.Events.PubSub;
-using TwitchLib.Events.Services.FollowerService;
-using TwitchLib.Events.Services.MessageThrottler;
-using TwitchLib.Enums;
-using TwitchLib.Extensions.Client;
-
 
 namespace TrayChatBot
 {
+    
     public partial class MainForm : Form
     {
         public static string  twitchName = Properties.Settings.Default.login;
@@ -83,7 +73,7 @@ namespace TrayChatBot
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void mf_btnJoin_Click(object sender, EventArgs e)
+        private async void mf_btnJoin_Click(object sender, EventArgs e)
         {
             // [CHECK] Подключен ли пользователь к серверу?
             if (!client.IsConnected)
@@ -96,7 +86,7 @@ namespace TrayChatBot
             if(currChannel != "")
             {
                 // [ДА] Вывод ошибки
-                printError("You already joined channel '"+ currChannel +"'! Leave channel first.");
+                printError("You already joined channel '"+ currChannel +"'! Leave the channel first.");
                 return;
             }
             // Подключаемся к каналу
@@ -188,7 +178,6 @@ namespace TrayChatBot
             CheckForIllegalCrossThreadCalls = false;
             printError("Connection failed! " + e.Error.Exception.Message);
         }
-        
         /// <summary>
         /// [handler] ОТКЛЮЧЕНИЕ от сервера
         /// </summary>
@@ -209,14 +198,27 @@ namespace TrayChatBot
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        public void onChannelJoined(object sender, OnJoinedChannelArgs e)
+        public async void onChannelJoined(object sender, OnJoinedChannelArgs e)
         {
             CheckForIllegalCrossThreadCalls = false;
 
-            print("--------------------------------------\n" + currChannel.ToUpper() + "\n--------------------------------------");
-
             currChannel = mf_txtChannelName.Text;
             printInfo("Succefully joined to channel '" + currChannel + "'!");
+            try
+            {
+                var chanInfo = await getChannelInfo(currChannel);
+                chNameBox.Text = currChannel.ToUpper();
+                //printInfo("Title: " + chanInfo.broadcastTitle);
+                TitleBox.Text = chanInfo.broadcastTitle;
+                //printInfo("Game: " + chanInfo.gameName);
+                gameNameBox.Text = chanInfo.gameName;
+                //printInfo("Communities: " + chanInfo.communities);
+                communitiesBox.Text = chanInfo.communities;
+            }
+            catch
+            {
+                printWarn("WARNING! You can't take any info about channel while it's offline.");
+            }
             client.OnJoinedChannel -= onChannelJoined;
         }
         /// <summary>
@@ -297,6 +299,47 @@ namespace TrayChatBot
             mf_LogBox.SelectionColor = Color.BlueViolet;
             mf_LogBox.AppendText("\n");
             mf_LogBox.ScrollToCaret();
+        }
+        /// <summary>
+        /// [функция] Написать в чатбокс (WARNING)
+        /// </summary>
+        /// <param name="text"></param>
+        public void printWarn(string text)
+        {
+            mf_LogBox.AppendText("WARNING: "+text);
+            mf_LogBox.Select(mf_LogBox.Text.Length - (text.Length + 9), (text.Length + 9));
+            mf_LogBox.SelectionColor = Color.YellowGreen;
+            mf_LogBox.AppendText("\n");
+            mf_LogBox.ScrollToCaret();
+        }
+        /// <summary>
+        /// Получить информацию о канале
+        /// </summary>
+        /// <param name="channel">Имя канала</param>
+        /// <returns>Title, Game, Communities</returns>
+        public async Task<(string broadcastTitle, string gameName, string communities)> getChannelInfo(string channel)
+        {
+            var api = new TwitchAPI();
+            api.Settings.Validators.SkipAccessTokenValidation = true;
+            api.Settings.Validators.SkipClientIdValidation = true;
+            api.Settings.ClientId = Properties.Settings.Default.clientid;
+            api.Settings.AccessToken = Properties.Settings.Default.apptoken;
+
+            var User = await api.Users.v5.GetUserByNameAsync(channel);
+            var Stream = await api.Streams.v5.GetStreamByUserAsync(User.Matches[0].Id);
+            var communities = await api.Channels.v5.GetChannelCommuntiesAsync(User.Matches[0].Id);
+            var CommunityString = "";
+            if (communities.Communities.Length != 0)
+            {
+                foreach (Community comm in communities.Communities)
+                    CommunityString += comm.Name + ", ";
+                CommunityString = CommunityString.Remove(CommunityString.Length - 2, 2);
+            }
+            else
+            {
+                CommunityString = "No communities!";
+            }
+            return (Stream.Stream.Channel.Status, Stream.Stream.Channel.Game, CommunityString);
         }
 
         
