@@ -263,7 +263,7 @@ namespace TrayChatBot
                 FontStyle.Regular
                 );
             mf_ChatBox.SelectionColor = Color.Black;
-            mf_ChatBox.SelectionStart = mf_ChatBox.TextLength;
+            mf_ChatBox.DeselectAll();
             mf_ChatBox.ScrollToCaret();
         }
         // ФУНКЦИИ
