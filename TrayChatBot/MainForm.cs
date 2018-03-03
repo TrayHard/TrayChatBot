@@ -148,6 +148,15 @@ namespace TrayChatBot
                 printError("You are not connected to the server!");
             }
         }
+        /// <summary>
+        /// [кнопка] Очистка чата
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void mf_btnClear_Click(object sender, EventArgs e)
+        {
+            mf_ChatBox.Clear();
+        }
         // HANDLER'ы
         /////////////
         /// <summary>
@@ -342,10 +351,20 @@ namespace TrayChatBot
             }
             return (Stream.Stream.Channel.Status, Stream.Stream.Channel.Game, CommunityString);
         }
-
-        private void mf_btnClear_Click(object sender, EventArgs e)
+        private void DeleteLine(int a_line)
         {
-            mf_ChatBox.Clear();
+            int start_index = mf_ChatBox.GetFirstCharIndexFromLine(a_line);
+            int count = mf_ChatBox.Lines[a_line].Length;
+
+            // Eat new line chars
+            if (a_line < mf_ChatBox.Lines.Length - 1)
+            {
+                count += mf_ChatBox.GetFirstCharIndexFromLine(a_line + 1) -
+                    ((start_index + count - 1) + 1);
+            }
+
+            mf_ChatBox.Text = mf_ChatBox.Text.Remove(start_index, count);
         }
+        
     }
 }
