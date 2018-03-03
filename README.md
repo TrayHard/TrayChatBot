@@ -9,7 +9,7 @@ Twitch Chat Bot with GUI for myself.
 - [x] Posting messages
 - [x] Basic message format
 - [x] Display the name, the game and groups of the broadcasting
-- [ ] Clearing the chat
+- [x] Clearing the chat
 - [ ] Limiting amount of lines in ChatBox
 - [ ] List and amount of viewers
 - [ ] Make letter cases in own nickname the same as letter cases of original Twitch nickname
