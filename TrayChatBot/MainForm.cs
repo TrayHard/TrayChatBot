@@ -202,6 +202,7 @@ namespace TrayChatBot
         {
             CheckForIllegalCrossThreadCalls = false;
 
+            mf_ChatBox.Clear();
             currChannel = mf_txtChannelName.Text;
             printInfo("Succefully joined to channel '" + currChannel + "'!");
             try
@@ -217,7 +218,7 @@ namespace TrayChatBot
             }
             catch
             {
-                printWarn("WARNING! You can't take any info about channel while it's offline.");
+                printWarn("You can't take any info about channel while it's offline.");
             }
             client.OnJoinedChannel -= onChannelJoined;
         }
@@ -342,6 +343,9 @@ namespace TrayChatBot
             return (Stream.Stream.Channel.Status, Stream.Stream.Channel.Game, CommunityString);
         }
 
-        
+        private void mf_btnClear_Click(object sender, EventArgs e)
+        {
+            mf_ChatBox.Clear();
+        }
     }
 }

@@ -41,7 +41,7 @@
             this.mf_btnLeave = new System.Windows.Forms.Button();
             this.mf_txtChannelName = new System.Windows.Forms.ComboBox();
             this.mf_txtChatLineBox = new System.Windows.Forms.RichTextBox();
-            this.button1 = new System.Windows.Forms.Button();
+            this.mf_btnClear = new System.Windows.Forms.Button();
             this.chnLabel = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.button2 = new System.Windows.Forms.Button();
@@ -181,14 +181,15 @@
             this.mf_txtChatLineBox.TabIndex = 12;
             this.mf_txtChatLineBox.Text = "";
             // 
-            // button1
+            // mf_btnClear
             // 
-            this.button1.Location = new System.Drawing.Point(331, 472);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(70, 30);
-            this.button1.TabIndex = 13;
-            this.button1.Text = "Clear Chat";
-            this.button1.UseVisualStyleBackColor = true;
+            this.mf_btnClear.Location = new System.Drawing.Point(331, 472);
+            this.mf_btnClear.Name = "mf_btnClear";
+            this.mf_btnClear.Size = new System.Drawing.Size(70, 30);
+            this.mf_btnClear.TabIndex = 13;
+            this.mf_btnClear.Text = "Clear Chat";
+            this.mf_btnClear.UseVisualStyleBackColor = true;
+            this.mf_btnClear.Click += new System.EventHandler(this.mf_btnClear_Click);
             // 
             // chnLabel
             // 
@@ -306,7 +307,7 @@
             this.Controls.Add(this.label6);
             this.Controls.Add(this.titleLabel);
             this.Controls.Add(this.chnLabel);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.mf_btnClear);
             this.Controls.Add(this.mf_txtChatLineBox);
             this.Controls.Add(this.mf_txtChannelName);
             this.Controls.Add(this.mf_btnLeave);
@@ -341,7 +342,7 @@
         private System.Windows.Forms.Button mf_btnLeave;
         private System.Windows.Forms.ComboBox mf_txtChannelName;
         private System.Windows.Forms.RichTextBox mf_txtChatLineBox;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button mf_btnClear;
         private System.Windows.Forms.Label chnLabel;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Button button2;
